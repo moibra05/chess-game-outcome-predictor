@@ -1,0 +1,7 @@
+WHITE_ELO = "white_elo"
+BLACK_ELO = "black_elo"
+MOVE_NUMBER = "move_number"
+FEN = "fen"
+TIME_CONTROL = "time_control"
+RESULT = "result"
+SITE = "site"

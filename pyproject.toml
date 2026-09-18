@@ -8,10 +8,12 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
+    "ipdb>=0.13.13",
     "matplotlib>=3.11.2",
     "numpy>=2.5.3",
     "python-chess>=1.999",
     "scikit-learn>=1.9.1",
+    "zstandard>=0.25.0",
 ]
 
 [project.scripts]
@@ -20,3 +22,7 @@ chess-game-outcome-predictor = "chess_game_outcome_predictor:main"
 [build-system]
 requires = ["uv_build>=0.12.15,<0.13.0"]
 build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 90
+indent-width = 2
