@@ -7,8 +7,6 @@ from chess_game_outcome_predictor.experiment_tracking import track_run
 from chess_game_outcome_predictor.training.data import load_training_data
 from utils.build_dataset import build_dataset
 
-ELO_DIFF_CUTOFF = 100
-
 if __name__ == "__main__":
   build_dataset(max_games=100000)
   train_X, train_Y, validation_X, validation_Y, test_X, test_Y = load_training_data()

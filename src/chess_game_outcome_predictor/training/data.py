@@ -46,6 +46,7 @@ def load_training_data(path="data/processed/game_data.csv"):
   df[ColumnKeys.RESULT] = df[ColumnKeys.RESULT].replace("1-0", "0")
   df[ColumnKeys.RESULT] = df[ColumnKeys.RESULT].replace("0-1", "1")
   df[ColumnKeys.RESULT] = df[ColumnKeys.RESULT].replace("1/2-1/2", "2")
+  df[ColumnKeys.RESULT] = df[ColumnKeys.RESULT].astype(int)
 
   df[ColumnKeys.ELO_DIFF] = df[ColumnKeys.WHITE_ELO] - df[ColumnKeys.BLACK_ELO]
   df[ColumnKeys.ELO_DIFF] = df[ColumnKeys.ELO_DIFF].astype(int)
