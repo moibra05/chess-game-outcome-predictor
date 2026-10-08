@@ -1,5 +1,3 @@
-"""Shared tabular features and game-level 70/15/15 data splitting."""
-
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -36,11 +34,6 @@ FEATURE_COLUMNS = [
 
 
 def load_training_data(path="data/processed/game_data.csv"):
-  """Return train_X, train_Y, validation_X, validation_Y, test_X, test_Y.
-
-  Split whole games to keep positions from the same game in one partition.
-  Splits remain random on every call, matching the original training script.
-  """
   df = pd.read_csv(path)
 
   df[ColumnKeys.RESULT] = df[ColumnKeys.RESULT].replace("1-0", "0")
@@ -53,8 +46,8 @@ def load_training_data(path="data/processed/game_data.csv"):
 
   unique_games = df[ColumnKeys.SITE].unique()
 
-  train_games, temp = train_test_split(unique_games, train_size=0.7)
-  validation_games, test_games = train_test_split(temp, train_size=0.5)
+  train_games, temp = train_test_split(unique_games, train_size=0.7, random_state=42)
+  validation_games, test_games = train_test_split(temp, train_size=0.5, random_state=42)
 
   train_df = df[df[ColumnKeys.SITE].isin(train_games)]
   validation_df = df[df[ColumnKeys.SITE].isin(validation_games)]
