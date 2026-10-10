@@ -1,3 +1,4 @@
+from joblib import dump
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -28,3 +29,5 @@ if __name__ == "__main__":
     test_X,
     test_Y,
   )
+
+  dump(model, "logistic_model.joblib")

@@ -7,4 +7,6 @@ data/processed/
 
 results/
 
-best_model.pt
+best_cnn_model.pt
+logistic_model.joblib
+xgboost_model.joblib

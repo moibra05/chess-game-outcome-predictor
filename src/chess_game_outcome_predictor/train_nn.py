@@ -250,7 +250,7 @@ def main():
       f"val acc={validation_accuracy:.4f}"
     )
 
-  model.load_state_dict(torch.load("best_model.pt"))
+  model.load_state_dict(torch.load("best_cnn_model.pt"))
   test_loss, test_accuracy = evaluate_model(model, test_loader, criterion)
 
   print("Test loss:", test_loss)

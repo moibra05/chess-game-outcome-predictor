@@ -1,3 +1,4 @@
+from joblib import dump
 from sklearn.metrics import log_loss
 from sklearn.model_selection import ParameterGrid
 from xgboost import XGBClassifier
@@ -65,3 +66,5 @@ if __name__ == "__main__":
     test_X,
     test_Y,
   )
+
+  dump(model, "xgboost_model.joblib")
