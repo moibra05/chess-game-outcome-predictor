@@ -10,3 +10,4 @@ results/
 best_cnn_model.pt
 logistic_model.joblib
 xgboost_model.joblib
+cnn_scaler.joblib

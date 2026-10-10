@@ -2,14 +2,13 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from utils.constants import ColumnKeys, BOARD_CHANNELS
+from utils.constants import ColumnKeys
 
 FEATURE_COLUMNS = [
   ColumnKeys.WHITE_ELO,
   ColumnKeys.BLACK_ELO,
   ColumnKeys.ELO_DIFF,
   ColumnKeys.MOVE_NUMBER,
-
   ColumnKeys.WHITE_PAWNS,
   ColumnKeys.BLACK_PAWNS,
   ColumnKeys.WHITE_KNIGHTS,
@@ -20,15 +19,12 @@ FEATURE_COLUMNS = [
   ColumnKeys.BLACK_ROOKS,
   ColumnKeys.WHITE_QUEENS,
   ColumnKeys.BLACK_QUEENS,
-
   ColumnKeys.MATERIAL_DIFF,
   ColumnKeys.SIDE_TO_MOVE,
-
   ColumnKeys.WHITE_CAN_CASTLE_KINGSIDE,
   ColumnKeys.WHITE_CAN_CASTLE_QUEENSIDE,
   ColumnKeys.BLACK_CAN_CASTLE_KINGSIDE,
   ColumnKeys.BLACK_CAN_CASTLE_QUEENSIDE,
-
   ColumnKeys.IN_CHECK,
   ColumnKeys.LEGAL_MOVE_COUNT,
 ]
@@ -48,12 +44,13 @@ METADATA_COLUMNS = [
   ColumnKeys.LEGAL_MOVE_COUNT,
 ]
 
+
 def _load_positions(path):
   df = pd.read_csv(path)
 
-  df[ColumnKeys.RESULT] = df[ColumnKeys.RESULT].replace(
-    {"1-0": "0", "0-1": "1", "1/2-1/2": "2"}
-  ).astype(int)
+  df[ColumnKeys.RESULT] = (
+    df[ColumnKeys.RESULT].replace({"1-0": "0", "0-1": "1", "1/2-1/2": "2"}).astype(int)
+  )
 
   elo_difference = df[ColumnKeys.WHITE_ELO] - df[ColumnKeys.BLACK_ELO]
   df[ColumnKeys.ELO_DIFF] = elo_difference.astype(int)
@@ -110,4 +107,4 @@ def load_cnn_training_data(path="data/processed/game_data.csv"):
   validation_df[METADATA_COLUMNS] = scaler.transform(validation_df[METADATA_COLUMNS])
   test_df[METADATA_COLUMNS] = scaler.transform(test_df[METADATA_COLUMNS])
 
-  return train_df, validation_df, test_df
+  return train_df, validation_df, test_df, scaler

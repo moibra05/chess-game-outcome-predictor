@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.nn.functional as F
+from joblib import dump
 from sklearn.metrics import accuracy_score, log_loss
 from torch import nn, optim
 from torch.utils.data import DataLoader, Dataset
@@ -12,7 +13,6 @@ from chess_game_outcome_predictor.training.device import DEVICE
 from utils.build_dataset import build_dataset
 from utils.constants import BOARD_CHANNELS, ColumnKeys
 
-
 METADATA_COLUMNS = [
   ColumnKeys.WHITE_ELO,
   ColumnKeys.BLACK_ELO,
@@ -20,6 +20,7 @@ METADATA_COLUMNS = [
   ColumnKeys.MOVE_NUMBER,
   ColumnKeys.SIDE_TO_MOVE,
 ]
+
 
 class ChessDataset(Dataset):
   def __init__(self, df):
@@ -122,9 +123,7 @@ def predict_probabilities(model, loader):
   return np.concatenate(probabilities)
 
 
-def evaluate_and_track_nn(
-  model, train_dataset, validation_loader, test_loader, test_df
-):
+def evaluate_and_track_nn(model, train_dataset, validation_loader, test_loader, test_df):
   train_loader = DataLoader(train_dataset, batch_size=1024, num_workers=4)
   train_probabilities = predict_probabilities(model, train_loader)
 
@@ -134,7 +133,7 @@ def evaluate_and_track_nn(
   train_labels = train_dataset.labels.numpy()
   validation_labels = validation_loader.dataset.labels.numpy()
   test_labels = test_loader.dataset.labels.numpy()
-  
+
   classes = np.arange(3)
 
   metrics = {
@@ -151,11 +150,11 @@ def evaluate_and_track_nn(
   for name, value in metrics.items():
     print(f"{name}: {value:.5f}")
 
-  test_move_metrics = evaluate_nn_move_counts(
-    test_df, test_labels, test_probabilities
-  )
+  test_move_metrics = evaluate_nn_move_counts(test_df, test_labels, test_probabilities)
   track_run(
-    "Neural network", **metrics, move_metrics=test_move_metrics,
+    "Neural network",
+    **metrics,
+    move_metrics=test_move_metrics,
   )
 
 
@@ -174,12 +173,12 @@ def evaluate_nn_move_counts(df, labels, probabilities):
     group = {
       "move_group": label,
       "position_count": count,
-      "test_accuracy": accuracy_score(
-        labels[mask], probabilities[mask].argmax(axis=1)
-      ) if count else None,
-      "test_log_loss": log_loss(
-        labels[mask], probabilities[mask], labels=np.arange(3)
-      ) if count else None,
+      "test_accuracy": accuracy_score(labels[mask], probabilities[mask].argmax(axis=1))
+      if count
+      else None,
+      "test_log_loss": log_loss(labels[mask], probabilities[mask], labels=np.arange(3))
+      if count
+      else None,
     }
 
     move_metrics.append(group)
@@ -198,25 +197,25 @@ def evaluate_nn_move_counts(df, labels, probabilities):
 
 def main():
   build_dataset(max_games=100000)
-  train_df, validation_df, test_df = load_cnn_training_data()
+  train_df, validation_df, test_df, scaler = load_cnn_training_data()
 
   train_dataset = ChessDataset(train_df)
   validation_dataset = ChessDataset(validation_df)
   test_dataset = ChessDataset(test_df)
 
   train_loader = DataLoader(
-    train_dataset, 
+    train_dataset,
     batch_size=1024,
     shuffle=True,
     num_workers=4,
   )
   validation_loader = DataLoader(
-    validation_dataset, 
-    batch_size=1024,  
+    validation_dataset,
+    batch_size=1024,
     num_workers=4,
   )
   test_loader = DataLoader(
-    test_dataset, 
+    test_dataset,
     batch_size=1024,
     num_workers=4,
   )
@@ -234,14 +233,13 @@ def main():
   for epoch in range(epochs):
     training_loss = train_epoch(model, train_loader, criterion, optimizer)
     validation_loss, validation_accuracy = evaluate_model(
-      model,
-      validation_loader,
-      criterion
+      model, validation_loader, criterion
     )
 
     if validation_loss < best_validation_loss:
       best_validation_loss = validation_loss
-      torch.save(model.state_dict(), "best_model.pt")
+      torch.save(model.state_dict(), "best_cnn_model.pt")
+      dump(scaler, "cnn_scaler.joblib")
 
     print(
       f"Epoch {epoch + 1}: "
@@ -250,14 +248,12 @@ def main():
       f"val acc={validation_accuracy:.4f}"
     )
 
-  model.load_state_dict(torch.load("best_cnn_model.pt"))
+  model.load_state_dict(torch.load("best_cnn_model.pt", map_location=DEVICE))
   test_loss, test_accuracy = evaluate_model(model, test_loader, criterion)
 
   print("Test loss:", test_loss)
   print("Test accuracy:", test_accuracy)
-  evaluate_and_track_nn(
-    model, train_dataset, validation_loader, test_loader, test_df
-  )
+  evaluate_and_track_nn(model, train_dataset, validation_loader, test_loader, test_df)
 
 
 if __name__ == "__main__":

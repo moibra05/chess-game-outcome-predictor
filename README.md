@@ -194,3 +194,17 @@ uv run python -m chess_game_outcome_predictor.train_nn
 
 All models use the same game level training, validation, and test split so their
 results can be compared directly.
+
+To predict a result from a FEN and player ratings, run from the project root:
+
+```sh
+uv run python -m chess_game_outcome_predictor.predict \
+  --model logistic \
+  --fen "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" \
+  --white-elo 1600 --black-elo 1500
+```
+
+Choose `logistic`, `xgboost`, or `cnn`. The default files are
+`logistic_model.joblib`, `xgboost_model.joblib`, and `best_cnn_model.pt` and are accessible 
+after training each respective model. The output includes White wins, Black wins, or Draw 
+and the predicted class's probability as confidence.
