@@ -4,12 +4,12 @@ import os
 import random
 import tempfile
 import time
-from collections import Counter
 from pathlib import Path
 from compression import zstd
+from collections import Counter
 
 import chess.pgn
-from utils.constants import ColumnKeys
+from utils.constants import ColumnKeys, BOARD_CHANNELS
 
 fieldnames = [
   ColumnKeys.WHITE_ELO,
@@ -37,6 +37,18 @@ fieldnames = [
   ColumnKeys.BLACK_CAN_CASTLE_QUEENSIDE,
   ColumnKeys.IN_CHECK,
   ColumnKeys.LEGAL_MOVE_COUNT,
+  ColumnKeys.WHITE_PAWN_SQUARES,
+  ColumnKeys.BLACK_PAWN_SQUARES,
+  ColumnKeys.WHITE_KNIGHT_SQUARES,
+  ColumnKeys.BLACK_KNIGHT_SQUARES,
+  ColumnKeys.WHITE_BISHOP_SQUARES,
+  ColumnKeys.BLACK_BISHOP_SQUARES,
+  ColumnKeys.WHITE_ROOK_SQUARES,
+  ColumnKeys.BLACK_ROOK_SQUARES,
+  ColumnKeys.WHITE_QUEEN_SQUARES,
+  ColumnKeys.BLACK_QUEEN_SQUARES,
+  ColumnKeys.WHITE_KING_SQUARES,
+  ColumnKeys.BLACK_KING_SQUARES,
 ]
 
 input_path = Path("data/raw/lichess_db_standard_rated_2016-03.pgn.zst")
@@ -83,6 +95,19 @@ def extra_board_features(board):
       ColumnKeys.BLACK_CAN_CASTLE_QUEENSIDE: int(board.has_queenside_castling_rights(chess.BLACK)),
       ColumnKeys.IN_CHECK: int(board.is_check()),
       ColumnKeys.LEGAL_MOVE_COUNT: board.legal_moves.count(),
+
+      ColumnKeys.WHITE_PAWN_SQUARES: board.pieces(chess.PAWN, chess.WHITE).mask,
+      ColumnKeys.BLACK_PAWN_SQUARES: board.pieces(chess.PAWN, chess.BLACK).mask,
+      ColumnKeys.WHITE_KNIGHT_SQUARES: board.pieces(chess.KNIGHT, chess.WHITE).mask,
+      ColumnKeys.BLACK_KNIGHT_SQUARES: board.pieces(chess.KNIGHT, chess.BLACK).mask,
+      ColumnKeys.WHITE_BISHOP_SQUARES: board.pieces(chess.BISHOP, chess.WHITE).mask,
+      ColumnKeys.BLACK_BISHOP_SQUARES: board.pieces(chess.BISHOP, chess.BLACK).mask,
+      ColumnKeys.WHITE_ROOK_SQUARES: board.pieces(chess.ROOK, chess.WHITE).mask,
+      ColumnKeys.BLACK_ROOK_SQUARES: board.pieces(chess.ROOK, chess.BLACK).mask,
+      ColumnKeys.WHITE_QUEEN_SQUARES: board.pieces(chess.QUEEN, chess.WHITE).mask,
+      ColumnKeys.BLACK_QUEEN_SQUARES: board.pieces(chess.QUEEN, chess.BLACK).mask,
+      ColumnKeys.WHITE_KING_SQUARES: board.pieces(chess.KING, chess.WHITE).mask,
+      ColumnKeys.BLACK_KING_SQUARES: board.pieces(chess.KING, chess.BLACK).mask,
     } 
 
 def file_info(path):
@@ -104,7 +129,7 @@ def build_dataset(max_games=10):
     if cached.get("key") == cache_key and cached.get("output") == file_info(file_path):
       print(f"Dataset already built for {max_games} games; skipping.")
       return
-  except FileNotFoundError, json.JSONDecodeError, OSError, AttributeError:
+  except (FileNotFoundError, json.JSONDecodeError, OSError, AttributeError):
     pass
 
   file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -124,17 +149,26 @@ def build_dataset(max_games=10):
       while game is not None and processed_games < max_games:
         moves = list(game.mainline_moves())
 
-        if moves:
+        if len(moves) >= 3:
           board = game.board()
+          third = len(moves) // 3
+
+          # early = random.randint(1, third)
+          # middle = random.randint(third + 1, 2 * third)
+          # late = random.randint(2 * third + 1, len(moves))
+
+          # selected_board_positions = {early, middle, late}
+          
           selected_board_positions = Counter(
-            random.randint(1, len(moves)) for _ in range(3)
+            random.randint(2 * third + 1, len(moves)) for _ in range(3)
           )
+
           last_position = max(selected_board_positions)
 
           for move_number, move in enumerate(moves, start=1):
             board.push(move)
-            row_count = selected_board_positions.get(move_number, 0)
-            if row_count:
+
+            if move_number in selected_board_positions:
               data = {
                 ColumnKeys.SITE: game.headers["Site"],
                 ColumnKeys.WHITE_ELO: game.headers["WhiteElo"],
@@ -143,16 +177,16 @@ def build_dataset(max_games=10):
                 ColumnKeys.FEN: board.fen(),
                 ColumnKeys.TIME_CONTROL: game.headers["TimeControl"],
                 ColumnKeys.RESULT: game.headers["Result"],
-                **extra_board_features(board)
+                **extra_board_features(board),
               }
-              for _ in range(row_count):
-                writer.writerow(data)
+
+              writer.writerow(data)
 
             if move_number == last_position:
               break
 
-        game = chess.pgn.read_game(f)
         processed_games += 1
+        game = chess.pgn.read_game(f)
 
     os.replace(temp_output, file_path)
     temp_cache = Path(temp_dir) / cache_path.name

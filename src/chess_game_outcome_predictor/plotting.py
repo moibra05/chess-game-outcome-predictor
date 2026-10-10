@@ -84,7 +84,9 @@ def plot_move_counts(runs, plots_dir):
   )
 
   for ax, (metric, title, ylabel) in zip(axes, comparisons):
-    for name in model_names:
+    # Test position counts are shared by all models using the same split.
+    series_names = model_names[-1:] if metric == "position_count" else model_names
+    for name in series_names:
       groups = {run["move_group"]: run for run in runs if run["run_name"] == name}
       values = []
 
@@ -92,16 +94,17 @@ def plot_move_counts(runs, plots_dir):
         value = groups.get(label, {}).get(metric)
         values.append(float(value) if value not in (None, "") else float("nan"))
 
-      ax.plot(range(len(labels)), values, marker="o", label=name)
+      legend = None if metric == "position_count" else name
+      ax.plot(range(len(labels)), values, marker="o", label=legend)
 
     ax.set_xticks(range(len(labels)), labels)
     ax.set(title=title, xlabel="Chess move number", ylabel=ylabel)
     ax.set_ylim(bottom=0)
     ax.grid(axis="y", alpha=0.25)
 
-    if model_names:
+    if model_names and metric != "position_count":
       ax.legend()
-    else:
+    elif not model_names:
       ax.text(
         0.5,
         0.5,

@@ -14,6 +14,7 @@ dependencies = [
     "pandas>=3.0.6",
     "python-chess>=1.999",
     "scikit-learn>=1.9.1",
+    "torch>=2.14.1",
     "xgboost>=3.4.1",
     "zstandard>=0.25.0",
 ]
